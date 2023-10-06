@@ -8,7 +8,7 @@
 </style>
 <template>
   <div>
-    <h1>Welcome to the Mojolicious real-time web framework!</h1>
+    <h1>Welcome to TextureMaker!</h1>
     <svg ref="texture" id="rectangle-container" width="256" height="256" viewBox="0 0 256 256"></svg>
     <button @click="saveBlob">save</button>
     <div class="patterns">
@@ -83,7 +83,6 @@ module.exports = {
     destroyed: function(){
     },
     methods: {
-	// Bartolini 014010170745
 	saveBlob: function(){
 	    var svg = this.$refs.texture.outerHTML
 	    svg = svg.replace("svg", 'svg xmlns="http://www.w3.org/2000/svg"')
