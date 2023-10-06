@@ -1,0 +1,195 @@
+<style scoped>
+    * { font-family: sans-serif }
+  .swatch {
+      width: 2em; height: 2em; display: inline-block; margin: 12px;
+  }
+  pre { display: none }
+  .patterns svg { display: inline-block; margin: 16px; width: 64px } 
+</style>
+<template>
+  <div>
+    <h1>Welcome to the Mojolicious real-time web framework!</h1>
+    <svg ref="texture" id="rectangle-container" width="256" height="256" viewBox="0 0 256 256"></svg>
+    <button @click="saveBlob">save</button>
+    <div class="patterns">
+      <h3>Patterns</h3>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.lines()</pre>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.lines().orientation("3/8", "7/8")</pre>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.circles().radius(4).complement()</pre>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.paths().d("hexagons").size(8)</pre>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.paths().d("crosses").size(16)</pre>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.paths().d("caps").size(16)</pre>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.paths().d("waves").size(16)</pre>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.paths().d("nylon").size(16)</pre>
+      <svg @click="selectTexture($event)" id="rectangle-container" width="64" height="64" viewBox="0 0 64 64"></svg>
+      <pre class="sample">textures.paths().d("squares").size(16)</pre>
+    </div>    
+    <div>
+      <h3>Stroke</h3>
+      <div v-for="c in colors" class="swatch"
+	   @click="selectColor($event, 'stroke', c)"
+	   :style="{ 'background-color': c, border: 'thin solid grey', width:'2em', height:'2em'  }"></div>
+    </div>
+    <div>
+      <h3>Background</h3>
+      <div v-for="c in colors" class="swatch"
+	   @click="selectColor($event, 'background', c)"
+	   :style="{ 'background-color': c, border: 'thin solid grey', width:'2em', height:'2em'  }"></div>
+    </div>
+    <div>
+      <h3>Fill</h3>
+      <div v-for="c in colors" class="swatch"
+	   @click="selectColor($event, 'fill', c)"
+	   :style="{ 'background-color': c, border: 'thin solid grey', width:'2em', height:'2em'  }"></div>
+    </div>
+</div>
+</template>
+<script>
+module.exports = {
+    data: function () {
+	return {
+	    colors: ["white", '#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c',
+		     '#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928', "Gainsboro", "Silver", "Grey"],
+	    stroke: 'white',
+	    background: 'lightgray',
+	    fill: 'gray',
+	    texture: 'textures.lines().orientation("3/8", "7/8")'
+	};
+    },
+    async mounted(){
+	console.log(d3)
+	const svg = d3.select('svg');
+
+	console.log(svg)
+	const texture = this.makeTexture(this.texture)
+	svg.call(texture);
+
+	svg.append("rect")
+	    .attr("x", 0)         // X position of the top-left corner of the rectangle
+	    .attr("y", 0)         // Y position of the top-left corner of the rectangle
+	    .attr("width", 256)   // Width of the rectangle
+	    .attr("height", 256) // Height of the rectangle
+	    .style('fill', texture.url());  
+	this.makeSamples()
+    },
+    destroyed: function(){
+    },
+    methods: {
+	// Bartolini 014010170745
+	saveBlob: function(){
+	    var svg = this.$refs.texture.outerHTML
+	    svg = svg.replace("svg", 'svg xmlns="http://www.w3.org/2000/svg"')
+	    console.log(svg)
+	    svgToPng(svg,(imgData)=>{
+		const pngImage = document.createElement('img');
+		document.body.appendChild(pngImage);
+		pngImage.src=imgData;
+	    });
+	    function svgToPng(svg, callback) {
+		const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+		svgUrlToPng(url, (imgData) => {
+		    callback(imgData);
+		    URL.revokeObjectURL(url);
+		});
+	    }
+	    function svgUrlToPng(svgUrl, callback) {
+		const svgImage = document.createElement('img');
+		document.body.appendChild(svgImage);
+		svgImage.onload = function () {
+		    const canvas = document.createElement('canvas');
+		    canvas.width = svgImage.clientWidth;
+		    canvas.height = svgImage.clientHeight;
+		    const canvasCtx = canvas.getContext('2d');
+		    canvasCtx.drawImage(svgImage, 0, 0);
+		    const imgData = canvas.toDataURL('image/png');
+
+		    let downloadLink = document.createElement('a');
+		    downloadLink.setAttribute('download', 'textureswatch' + '.png');
+		    let url = canvas.toDataURL('image/png').replace(/^data:image\/png/,'data:application/octet-stream');
+		    downloadLink.setAttribute('href', url);
+		    downloadLink.click();
+		    document.body.removeChild(svgImage);
+		};
+		svgImage.src = svgUrl;
+	    }
+	},
+	saveBlobAsSVG: function(){
+	    const svg = this.$refs.texture.outerHTML
+	    var svgBlob = new Blob(['<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + svg], {type:"image/svg+xml;charset=utf-8"});
+	    var svgUrl = URL.createObjectURL(svgBlob);
+	    var downloadLink = document.createElement("a");
+	    downloadLink.href = svgUrl;
+	    downloadLink.download = "newesttree.svg";
+	    document.body.appendChild(downloadLink);
+	    downloadLink.click();
+	    document.body.removeChild(downloadLink);
+	},
+	makeRect: function(size, root) {
+	    const svg = root ? d3.select(root.node()) : d3.select(this.$refs.texture)
+	    svg.select("rect").remove()
+	    return svg.append("rect").attr("x", 0).attr("y", 0).attr("width", size).attr("height", size)
+	},
+	selectColor: function(e, g, c){
+	    console.log(this.$refs.texture)
+	    const svg = d3.select(this.$refs.texture)
+
+	    this[g] = c;
+	    
+	    const texture = this.makeTexture(this.texture)
+	    svg.call(texture);
+	    this.makeRect(256).style('fill', texture.url());  
+	},
+	selectTexture: function(e, g, c){
+	    var textureString = e.target.parentNode.nextSibling.nextSibling.textContent
+
+	    this.texture = textureString
+	    console.log(this.texture)
+	    const texture = this.makeTexture(this.texture)
+	    const svg = d3.select(this.$refs.texture).call(texture);
+	    this.makeRect(256).style('fill', texture.url());
+	    // console.log(svg.node().outerHTML)
+	},
+	makeTexture: function(textureString){
+	    var stroke     = this.stroke
+	    var background = this.background
+	    var fill       = this.fill
+	    
+	    const texture = eval(textureString + `.stroke("${stroke}").background("${background}")`)
+	    if (texture.fill) { texture.fill(fill) }
+	    return texture
+	}, 
+	makeSamples: function(){
+	    var stroke = this.stroke
+	    var background = this.background
+	    var fill = this.fill
+
+	    console.log(stroke, fill, background)
+
+	    Array.from(document.querySelectorAll(".sample")).forEach(sample => {
+		console.log(sample.textContent)
+		var svg = d3.select(sample.previousSibling.previousSibling)
+		
+		const texture = this.makeTexture(sample.textContent);
+
+		svg.call(texture);
+		svg.append("rect")
+		    .attr("x", 0)         // X position of the top-left corner of the rectangle
+		    .attr("y", 0)         // Y position of the top-left corner of the rectangle
+		    .attr("width", 64)   // Width of the rectangle
+		    .attr("height", 64) // Height of the rectangle
+		    .style('fill', texture.url());  
+	    })
+	}
+    },
+    components: {
+    },
+}
+</script>
